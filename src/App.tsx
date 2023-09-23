@@ -1,5 +1,7 @@
+import AudioPlayer from './MusicPlayer/AudioPlayer';
+
 function App() {
-  return <></>;
+  return <AudioPlayer />;
 }
 
 export default App;
