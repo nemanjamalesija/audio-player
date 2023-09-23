@@ -1,19 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AudioControls from './AudioControls';
 
 function formatTime(time: number) {
-  let minutes = Math.round(time / 60);
-  let secs = Math.round(time % 60);
+  const minutes = Math.round(time / 60);
+  const secs = Math.round(time % 60);
 
-  if (minutes < 10) {
-    minutes = '0' + minutes;
-  }
+  const paddedMinutes = minutes < 10 ? '0' + minutes : minutes.toString();
+  const paddedSeconds = secs < 10 ? '0' + secs : secs.toString();
 
-  if (secs < 10) {
-    secs = '0' + secs;
-  }
-
-  return minutes + ':' + secs;
+  return paddedMinutes + ':' + paddedSeconds;
 }
 
 type AudioPlayerPropsType = {
@@ -26,32 +21,37 @@ const AudioPlayer = ({ audioSrc }: AudioPlayerPropsType) => {
   );
   const [playing, setPlaying] = useState<boolean>(false);
   const [trackProgress, setTrackProgress] = useState<number>(0);
+  const animationFrameRef = useRef<number>();
+  const [currTime, setCurrTime] = useState('');
 
   useEffect(() => {
-    const startTimer = () => {
-      const interval = setInterval(() => {
-        if (audio.ended) {
-          clearInterval(interval); // Clear the interval when audio ends
-          setTrackProgress(0);
-        } else {
-          setTrackProgress(audio.currentTime);
-        }
-      }, 1000);
-    };
+    const animate = () => {
+      if (audio.ended) {
+        setPlaying(false);
+        setTrackProgress(0);
+        cancelAnimationFrame(animationFrameRef.current as number);
+      } else {
+        setTrackProgress(audio.currentTime);
 
-    let interval: any;
+        animationFrameRef.current = requestAnimationFrame(animate);
+      }
+    };
 
     if (playing) {
       audio.play();
-      interval = startTimer();
+      setCurrTime(formatTime(audio.duration));
+      requestAnimationFrame(animate);
     } else {
-      clearInterval(interval); // Clear the interval when not playing
       audio.pause();
+      cancelAnimationFrame(animationFrameRef.current as number);
     }
 
-    // Cleanup the interval on component unmount
-    return () => clearInterval(interval);
-  }, [playing, audio]);
+    // Cleanup function
+    return () => {
+      audio.pause();
+      cancelAnimationFrame(animationFrameRef.current as number);
+    };
+  }, [playing, audio, trackProgress]);
 
   useEffect(() => {
     audio.addEventListener('ended', () => setPlaying(false));
@@ -83,7 +83,7 @@ const AudioPlayer = ({ audioSrc }: AudioPlayerPropsType) => {
             <span>
               {isNaN(audio.duration) || !isFinite(audio.duration)
                 ? '0.00'
-                : formatTime(audio.duration)}
+                : currTime}
             </span>
           </span>
         </div>
