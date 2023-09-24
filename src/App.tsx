@@ -14,7 +14,7 @@ magenta - https://assets.codepen.io/296057/fem-bombshell.mp3
 function App() {
   const [audio] = useState(
     new Audio(
-      'http://commondatastorage.googleapis.com/codeskulptor-demos/riceracer_assets/music/race1.ogg'
+      'http://commondatastorage.googleapis.com/codeskulptor-demos/riceracer_assets/music/race2.ogg'
     )
   );
 
