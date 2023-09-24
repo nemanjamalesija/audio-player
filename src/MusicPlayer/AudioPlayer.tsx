@@ -29,20 +29,31 @@ const AudioPlayer = ({ audioSrc }: AudioPlayerPropsType) => {
       if (audio.ended) {
         setPlaying(false);
         setTrackProgress(0);
+        setCurrTime('00:00');
         cancelAnimationFrame(animationFrameRef.current as number);
       } else {
+        setCurrTime(formatTime(audio.currentTime));
         setTrackProgress(audio.currentTime);
-
         animationFrameRef.current = requestAnimationFrame(animate);
       }
     };
 
+    const startPlayback = () => {
+      try {
+        audio.play();
+        setPlaying(true);
+        animationFrameRef.current = requestAnimationFrame(animate);
+      } catch (error) {
+        console.error('Error playing audio:', error);
+        setPlaying(false);
+      }
+    };
+
     if (playing) {
-      audio.play();
-      setCurrTime(formatTime(audio.duration));
-      requestAnimationFrame(animate);
+      startPlayback();
     } else {
       audio.pause();
+      setPlaying(false);
       cancelAnimationFrame(animationFrameRef.current as number);
     }
 
@@ -51,14 +62,7 @@ const AudioPlayer = ({ audioSrc }: AudioPlayerPropsType) => {
       audio.pause();
       cancelAnimationFrame(animationFrameRef.current as number);
     };
-  }, [playing, audio, trackProgress]);
-
-  useEffect(() => {
-    audio.addEventListener('ended', () => setPlaying(false));
-    return () => {
-      audio.removeEventListener('ended', () => setPlaying(false));
-    };
-  }, []);
+  }, [playing, audio]);
 
   return (
     <div className='px-4 py-6 mx-auto mb-3 overflow-hidden rounded-lg w-[500px] bg-slate-300 mt-40'>
@@ -77,13 +81,13 @@ const AudioPlayer = ({ audioSrc }: AudioPlayerPropsType) => {
         />
         {/* audio duration and time left */}
         <div className='flex items-center gap-1 pl-5 text-figmaGrayShade'>
-          <span>{formatTime(audio.currentTime)}</span>
+          <span>{currTime ? currTime : '00:00'} </span>
           <span>/</span>
           <span>
             <span>
               {isNaN(audio.duration) || !isFinite(audio.duration)
                 ? '0.00'
-                : currTime}
+                : audio.duration}
             </span>
           </span>
         </div>
