@@ -12,28 +12,28 @@ function formatTime(time: number) {
 }
 
 type AudioPlayerPropsType = {
-  audioSrc: string;
+  audio: HTMLAudioElement;
 };
 
-const AudioPlayer = ({ audioSrc }: AudioPlayerPropsType) => {
-  const [audio] = useState(
-    new Audio('https://assets.codepen.io/296057/fem-bombshell.mp3')
-  );
+const AudioPlayer = ({ audio }: AudioPlayerPropsType) => {
   const [playing, setPlaying] = useState<boolean>(false);
-  const [trackProgress, setTrackProgress] = useState<number>(0);
   const animationFrameRef = useRef<number>();
   const [currTime, setCurrTime] = useState('');
+  const [percentagePlayed, setPercentagePlayed] = useState(0); // Initialize with 0
 
   useEffect(() => {
     const animate = () => {
       if (audio.ended) {
         setPlaying(false);
-        setTrackProgress(0);
         setCurrTime('00:00');
+        setPercentagePlayed(0); // Reset the percentage played to 0
         cancelAnimationFrame(animationFrameRef.current as number);
       } else {
-        setCurrTime(formatTime(audio.currentTime));
-        setTrackProgress(audio.currentTime);
+        const currentTime = audio.currentTime;
+        const duration = audio.duration;
+        setCurrTime(formatTime(currentTime)); // Ensure formatTime is defined and works correctly
+
+        setPercentagePlayed((currentTime / duration) * 100);
         animationFrameRef.current = requestAnimationFrame(animate);
       }
     };
@@ -65,31 +65,31 @@ const AudioPlayer = ({ audioSrc }: AudioPlayerPropsType) => {
   }, [playing, audio]);
 
   return (
-    <div className='px-4 py-6 mx-auto mb-3 overflow-hidden rounded-lg w-[500px] bg-slate-300 mt-40'>
-      <audio src={audioSrc}></audio>
+    <div className='fixed bottom-0 w-full '>
+      <div className='h-3 bg-slate-50 opacity-95 w-full'>
+        <div
+          style={{ width: `${percentagePlayed}%` }}
+          className='mt-20 bg-teal-500 opacity-90 h-full'
+        ></div>
+      </div>
+      <div className='px-4 py-8 mx-auto  overflow-hidden  bg-black opacity-80 '>
+        <div className='flex items-center h-full'>
+          <AudioControls playing={playing} setIsPlaying={setPlaying} />
 
-      <div className='flex items-center h-full'>
-        <AudioControls playing={playing} setIsPlaying={setPlaying} />
-        <input
-          type='range'
-          value={trackProgress}
-          readOnly
-          step='0.01'
-          min='0'
-          max={isNaN(audio.duration) ? '0.00' : audio.duration}
-          className='w-full h-[2px] bg-figmaGrayShade rounded-lg appearance-none custom-range-input"'
-        />
-        {/* audio duration and time left */}
-        <div className='flex items-center gap-1 pl-5 text-figmaGrayShade'>
-          <span>{currTime ? currTime : '00:00'} </span>
-          <span>/</span>
-          <span>
-            <span>
-              {isNaN(audio.duration) || !isFinite(audio.duration)
-                ? '0.00'
-                : audio.duration}
+          {/* audio duration and time left */}
+          <div className='flex items-center gap-1 pl-5 text-figmaGrayShade'>
+            <span className='text-teal-500 text-xl font-semibold'>
+              {currTime ? currTime : '00:00'}{' '}
             </span>
-          </span>
+            <span>/</span>
+            <span>
+              <span className='text-teal-500 font-semibold text-xl'>
+                {isNaN(audio.duration) || !isFinite(audio.duration)
+                  ? '0.00'
+                  : formatTime(audio.duration)}
+              </span>
+            </span>
+          </div>
         </div>
       </div>
     </div>
